@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Productos - UNCP | Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            padding: 2rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .header .subtitle { color: #94a3b8; font-size: 1.1rem; }
+        .badges { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
+        .badge { padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .badge-version { background: #3b82f6; color: white; }
+        .badge-oas { background: #10b981; color: white; }
+        .badge-drf { background: #8b5cf6; color: white; }
+
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-number { font-size: 2.5rem; font-weight: 700; color: #60a5fa; }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; margin-top: 0.3rem; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .btn-control {
+            padding: 0.8rem 1.5rem;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            color: #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-control:hover, .btn-control.active {
+            background: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        /* Gallery Grid (LO QUE QUERÍAS: IMÁGENES Y DISEÑO) */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .product-card {
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-color: #3b82f6;
+        }
+        .card-image {
+            height: 180px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            position: relative;
+        }
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-activo { background: #10b981; color: white; }
+        .status-agotado { background: #ef4444; color: white; }
+        .status-inactivo { background: #64748b; color: white; }
+        
+        .card-body { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; }
+        .card-category { color: #8b5cf6; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .card-title { font-size: 1.2rem; margin-bottom: 0.5rem; color: #f1f5f9; }
+        .card-desc { color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem; flex: 1; }
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .card-price { font-size: 1.5rem; font-weight: 700; color: #10b981; }
+        .card-stock { font-size: 0.8rem; color: #64748b; }
+
+        /* Swagger Section */
+        .swagger-section {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .swagger-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 1rem;
+        }
+
+        /* Footer */
+        .footer { text-align: center; padding: 2rem; color: #64748b; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 2rem; }
+        .footer strong { color: #e2e8f0; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 3rem; color: #94a3b8; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 API de Productos</h1>
+            <p class="subtitle">UNCP - Desarrollo de Aplicaciones Web | Semana 13</p>
+            <div class="badges">
+                <span class="badge badge-version">v1.0.0</span>
+                <span class="badge badge-oas">OAS 3.0</span>
+                <span class="badge badge-drf">Django REST Framework</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><div class="stat-number">{{ productos_count }}</div><div class="stat-label">📦 Productos</div></div>
+            <div class="stat-card"><div class="stat-number">{{ categorias_count }}</div><div class="stat-label">🏷️ Categorías</div></div>
+            <div class="stat-card"><div class="stat-number">{{ marcas_count }}</div><div class="stat-label">🏢 Marcas</div></div>
+            <div class="stat-card"><div class="stat-number">15</div><div class="stat-label">🔗 Endpoints</div></div>
+        </div>
+
+        <!-- CONTROLES DE FILTRO VISUAL -->
+        <div class="controls">
+            <button class="btn-control active" onclick="loadProducts('/api/productos/', this)">📦 Todos</button>
+            <button class="btn-control" onclick="loadProducts('/api/productos/?estado=activo', this)">✅ Activos</button>
+            <button class="btn-control" onclick="loadProducts('/api/productos/?destacado=true', this)">⭐ Destacados</button>
+            <button class="btn-control" onclick="loadProducts('/api/productos/?ordering=-precio', this)">💰 Más caros</button>
+        </div>
+
+        <!-- AQUÍ SE DIBUJAN LAS TARJETAS CON IMÁGENES -->
+        <div id="gallery" class="gallery">
+            <div class="loading">Cargando productos desde la API...</div>
+        </div>
+
+        <div class="swagger-section">
+            <h2 style="color: #f1f5f9; margin-bottom: 0.5rem;">📚 Documentación Técnica</h2>
+            <p style="color: #94a3b8;">Swagger UI con esquema OpenAPI 3.0</p>
+            <a href="/api/docs/" class="swagger-btn">🎯 Abrir Swagger UI</a>
+        </div>
+
+        <div class="footer">
+            <p><strong>Integrante:</strong> Garcia Yupanqui Ferdinand Piero</p>
+            <p><strong>Docente:</strong> Mg. Miguel Aguilar Coronación</p>
+            <p style="margin-top: 0.5rem;">Universidad Nacional del Centro del Perú - 2026-II</p>
+        </div>
+    </div>
+
+    <script>
+        // Iconos por categoría para que se vea bonito si no hay imagen
+        const icons = { 'Electrónica': '💻', 'Ropa': '👕', 'Hogar': '🏠', 'Default': '📦' };
+
+        async function loadProducts(url, btnElement) {
+            // Actualizar botones activos
+            document.querySelectorAll('.btn-control').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '<div class="loading">⏳ Consultando API REST...</div>';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const products = data.results || data; // Maneja paginación o lista directa
+
+                if (products.length === 0) {
+                    gallery.innerHTML = '<div class="loading">No hay productos para mostrar.</div>';
+                    return;
+                }
+
+                gallery.innerHTML = products.map(p => {
+                    // Lógica de imagen: usa la URL si existe, si no, un degradado con icono
+                    const icon = icons[p.categoria_nombre] || icons['Default'];
+                    const imageHtml = p.imagen 
+                        ? `<img src="${p.imagen}" alt="${p.nombre}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\\'font-size:4rem\\'>${icon}</span>'">` 
+                        : `<span style="font-size:4rem">${icon}</span>`;
+                    
+                    const statusClass = `status-${p.estado}`;
+
+                    return `
+                        <div class="product-card">
+                            <div class="card-image">
+                                ${imageHtml}
+                                <span class="status-badge ${statusClass}">${p.estado}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="card-category">${p.categoria_nombre || 'General'} • ${p.marca_nombre || ''}</div>
+                                <h3 class="card-title">${p.nombre}</h3>
+                                <p class="card-desc">${p.descripcion || 'Sin descripción'}</p>
+                                <div class="card-footer">
+                                    <div class="card-price">S/ ${p.precio}</div>
+                                    <div class="card-stock">Stock: ${p.stock}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                gallery.innerHTML = `<div class="loading" style="color:#ef4444">❌ Error al conectar con la API: ${error.message}</div>`;
+            }
+        }
+
+        // Cargar al inicio
+        window.onload = () => loadProducts('/api/productos/', document.querySelector('.btn-control'));
+    </script>
+</body>
+</html>
